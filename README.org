@@ -1,0 +1,5 @@
+* CLOSETTE: Implements subset of CLOS with a metaobject protocol.
+
+- http://www.cs.cmu.edu/afs/cs/project/ai-repository/ai/lang/lisp/oop/clos/closette/0.html
+
+sbclで動くようにした
