@@ -141,7 +141,7 @@
     (if (some #'null args)
         ()
         (append (apply fun (mapcar #'car args))
-                (apply #'mapappend fun (mapcar #'cdr args)) ))))
+                (apply #'mapappend fun (mapcar #'cdr args))))))
 
 ;;; mapplist is mapcar for property lists:
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -149,7 +149,7 @@
     (if (null x)
         ()
         (cons (funcall fun (car x) (cadr x))
-              (mapplist fun (cddr x)) ))))
+              (mapplist fun (cddr x))))))
 
 ;;;
 ;;; Standard instances
@@ -162,31 +162,31 @@
 (defstruct (std-instance (:constructor allocate-std-instance (class slots))
                    #+kcl (:constructor make-std-instance-for-sharp-s)
                          (:predicate std-instance-p)
-                         (:print-function print-std-instance) )
+                         (:print-function print-std-instance))
   class
-  slots )
+  slots)
 
 (defun print-std-instance (instance stream depth)
   (declare (ignore depth))
-  (print-object instance stream) )
+  (print-object instance stream))
 
 ;;; Standard instance allocation
 
 (defparameter secret-unbound-value (list "slot unbound"))
 
 (defun instance-slot-p (slot)
-  (eq (slot-definition-allocation slot) ':instance) )
+  (eq (slot-definition-allocation slot) ':instance))
 
 (defun std-allocate-instance (class)
   (allocate-std-instance
     class
     (allocate-slot-storage (count-if #'instance-slot-p (class-slots class))
-                           secret-unbound-value )))
+                           secret-unbound-value)))
 
 ;;; Simple vectors are used for slot storage.
 
 (defun allocate-slot-storage (size initial-value)
-  (make-array size :initial-element initial-value) )
+  (make-array size :initial-element initial-value))
 
 ;;; Standard instance slot access
 
@@ -199,7 +199,7 @@
 
 (defun slot-location (class slot-name)
   (if (and (eq slot-name 'effective-slots)
-           (eq class the-class-standard-class) )
+           (eq class the-class-standard-class))
       (position 'effective-slots the-slots-of-standard-class
                :key #'slot-definition-name)
       (let ((slot (find slot-name
@@ -210,37 +210,37 @@
                    slot-name class)
             (let ((pos (position slot
                                  (remove-if-not #'instance-slot-p
-                                                (class-slots class) ))))
+                                                (class-slots class)))))
                (if (null pos)
                    (error "The slot ~S is not an instance~@
                            slot in the class ~S."
                           slot-name class)
-                   pos ))))))
+                   pos))))))
 
 (defun slot-contents (slots location)
-  (svref slots location) )
+  (svref slots location))
 
 (defun (setf slot-contents) (new-value slots location)
-  (setf (svref slots location) new-value) )
+  (setf (svref slots location) new-value))
 
 (defun std-slot-value (instance slot-name)
   (let* ((location (slot-location (class-of instance) slot-name))
          (slots (std-instance-slots instance))
-         (val (slot-contents slots location)) )
+         (val (slot-contents slots location)))
     (if (eq secret-unbound-value val)
         (error "The slot ~S is unbound in the object ~S."
                slot-name instance)
-        val )))
+        val)))
 
 (defun slot-value (object slot-name)
   (if (eq (class-of (class-of object)) the-class-standard-class)
       (std-slot-value object slot-name)
-      (slot-value-using-class (class-of object) object slot-name) ))
+      (slot-value-using-class (class-of object) object slot-name)))
 
 (defun (setf std-slot-value) (new-value instance slot-name)
   (let ((location (slot-location (class-of instance) slot-name))
-        (slots (std-instance-slots instance)) )
-    (setf (slot-contents slots location) new-value) ))
+        (slots (std-instance-slots instance)))
+    (setf (slot-contents slots location) new-value)))
 (defun (setf slot-value) (new-value object slot-name)
   (if (eq (class-of (class-of object)) the-class-standard-class)
       (setf (std-slot-value object slot-name) new-value)
@@ -249,23 +249,23 @@
 
 (defun std-slot-boundp (instance slot-name)
   (let ((location (slot-location (class-of instance) slot-name))
-        (slots (std-instance-slots instance)) )
-    (not (eq secret-unbound-value (slot-contents slots location))) ))
+        (slots (std-instance-slots instance)))
+    (not (eq secret-unbound-value (slot-contents slots location)))))
 (defun slot-boundp (object slot-name)
   (if (eq (class-of (class-of object)) the-class-standard-class)
       (std-slot-boundp object slot-name)
-      (slot-boundp-using-class (class-of object) object slot-name) ))
+      (slot-boundp-using-class (class-of object) object slot-name)))
 
 (defun std-slot-makunbound (instance slot-name)
   (let ((location (slot-location (class-of instance) slot-name))
-        (slots (std-instance-slots instance)) )
-    (setf (slot-contents slots location) secret-unbound-value) )
-  instance )
+        (slots (std-instance-slots instance)))
+    (setf (slot-contents slots location) secret-unbound-value))
+  instance)
 
 (defun slot-makunbound (object slot-name)
   (if (eq (class-of (class-of object)) the-class-standard-class)
       (std-slot-makunbound object slot-name)
-      (slot-makunbound-using-class (class-of object) object slot-name) ))
+      (slot-makunbound-using-class (class-of object) object slot-name)))
 
 (defun std-slot-exists-p (instance slot-name)
   (not (null (find slot-name (class-slots (class-of instance))
@@ -274,14 +274,14 @@
 (defun slot-exists-p (object slot-name)
   (if (eq (class-of (class-of object)) the-class-standard-class)
       (std-slot-exists-p object slot-name)
-      (slot-exists-p-using-class (class-of object) object slot-name) ))
+      (slot-exists-p-using-class (class-of object) object slot-name)))
 
 ;;; class-of
 
 (defun class-of (x)
   (if (std-instance-p x)
       (std-instance-class x)
-      (built-in-class-of x) ))
+      (built-in-class-of x)))
 
 ;;; N.B. This version of built-in-class-of is straightforward but very slow.
 
@@ -306,16 +306,16 @@
     ((and (array * *) (not vector))                (find-class 'array))
     ((and sequence (not (or vector list)))         (find-class 'sequence))
     (function                                      (find-class 'function))
-    (t                                             (find-class 't)) ))
+    (t                                             (find-class 't))))
 
 ;;; subclassp and sub-specializer-p
 
 (defun subclassp (c1 c2)
-  (not (null (find c2 (class-precedence-list c1)))) )
+  (not (null (find c2 (class-precedence-list c1)))))
 
 (defun sub-specializer-p (c1 c2 c-arg)
   (let ((cpl (class-precedence-list c-arg)))
-    (not (null (find c2 (cdr (member c1 cpl))))) ))
+    (not (null (find c2 (cdr (member c1 cpl)))))))
 
 ;;;
 ;;; Class metaobjects and standard-class
@@ -330,44 +330,44 @@
        (class-precedence-list)            ; :accessor class-precedence-list
        (effective-slots)                  ; :accessor class-slots
        (direct-subclasses :initform ())   ; :accessor class-direct-subclasses
-       (direct-methods :initform ()) )))   ; :accessor class-direct-methods
+       (direct-methods :initform ()))))   ; :accessor class-direct-methods
 
 ;;; Defining the metaobject slot accessor function as regular functions
 ;;; greatly simplifies the implementation without removing functionality.
 
 (defun class-name (class) (std-slot-value class 'name))
 (defun (setf class-name) (new-value class)
-  (setf (slot-value class 'name) new-value) )
+  (setf (slot-value class 'name) new-value))
 
 (defun class-direct-superclasses (class)
-  (slot-value class 'direct-superclasses) )
+  (slot-value class 'direct-superclasses))
 (defun (setf class-direct-superclasses) (new-value class)
-  (setf (slot-value class 'direct-superclasses) new-value) )
+  (setf (slot-value class 'direct-superclasses) new-value))
 
 (defun class-direct-slots (class)
-  (slot-value class 'direct-slots) )
+  (slot-value class 'direct-slots))
 (defun (setf class-direct-slots) (new-value class)
-  (setf (slot-value class 'direct-slots) new-value) )
+  (setf (slot-value class 'direct-slots) new-value))
 
 (defun class-precedence-list (class)
-  (slot-value class 'class-precedence-list) )
+  (slot-value class 'class-precedence-list))
 (defun (setf class-precedence-list) (new-value class)
-  (setf (slot-value class 'class-precedence-list) new-value) )
+  (setf (slot-value class 'class-precedence-list) new-value))
 
 (defun class-slots (class)
-  (slot-value class 'effective-slots) )
+  (slot-value class 'effective-slots))
 (defun (setf class-slots) (new-value class)
-  (setf (slot-value class 'effective-slots) new-value) )
+  (setf (slot-value class 'effective-slots) new-value))
 
 (defun class-direct-subclasses (class)
-  (slot-value class 'direct-subclasses) )
+  (slot-value class 'direct-subclasses))
 (defun (setf class-direct-subclasses) (new-value class)
-  (setf (slot-value class 'direct-subclasses) new-value) )
+  (setf (slot-value class 'direct-subclasses) new-value))
 
 (defun class-direct-methods (class)
-  (slot-value class 'direct-methods) )
+  (slot-value class 'direct-methods))
 (defun (setf class-direct-methods) (new-value class)
-  (setf (slot-value class 'direct-methods) new-value) )
+  (setf (slot-value class 'direct-methods) new-value))
 
 ;;; defclass
 
@@ -378,11 +378,11 @@
        ,(canonicalize-direct-superclasses direct-superclasses)
      :direct-slots
        ,(canonicalize-direct-slots direct-slots)
-     ,@(canonicalize-defclass-options options) ))
+     ,@(canonicalize-defclass-options options)))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun canonicalize-direct-slots (direct-slots)
-   `(list ,@(mapcar #'canonicalize-direct-slot direct-slots)) )
+   `(list ,@(mapcar #'canonicalize-direct-slot direct-slots)))
 
   (defun canonicalize-direct-slot (spec)
     (if (symbolp spec)
@@ -393,26 +393,26 @@
             (initargs ())
             (readers ())
             (writers ())
-            (other-options ()) )
+            (other-options ()))
         (do ((olist (cdr spec) (cddr olist)))
             ((null olist))
           (case (car olist)
             (:initform
              (setq initfunction
-                   `(function (lambda () ,(cadr olist))) )
-             (setq initform `',(cadr olist)) )
+                   `(function (lambda () ,(cadr olist))))
+             (setq initform `',(cadr olist)))
             (:initarg
-             (push-on-end (cadr olist) initargs) )
+             (push-on-end (cadr olist) initargs))
             (:reader
-             (push-on-end (cadr olist) readers) )
+             (push-on-end (cadr olist) readers))
             (:writer
-             (push-on-end (cadr olist) writers) )
+             (push-on-end (cadr olist) writers))
             (:accessor
              (push-on-end (cadr olist) readers)
-             (push-on-end `(setf ,(cadr olist)) writers) )
+             (push-on-end `(setf ,(cadr olist)) writers))
             (otherwise
              (push-on-end `',(car olist) other-options)
-             (push-on-end `',(cadr olist) other-options) )))
+             (push-on-end `',(cadr olist) other-options))))
         `(list
            :name ',name
            ,@(when initfunction
@@ -425,19 +425,19 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun canonicalize-direct-superclasses (direct-superclasses)
-    `(list ,@(mapcar #'canonicalize-direct-superclass direct-superclasses)) )
+    `(list ,@(mapcar #'canonicalize-direct-superclass direct-superclasses)))
 
   (defun canonicalize-direct-superclass (class-name)
-    `(find-class ',class-name) )
+    `(find-class ',class-name))
 
   (defun canonicalize-defclass-options (options)
-    (mapappend #'canonicalize-defclass-option options) )
+    (mapappend #'canonicalize-defclass-option options))
 
   (defun canonicalize-defclass-option (option)
     (case (car option)
       (:metaclass
        (list ':metaclass
-             `(find-class ',(cadr option)) ))
+             `(find-class ',(cadr option))))
       (:default-initargs
           (list
            ':direct-default-initargs
@@ -445,9 +445,9 @@
                      #'(lambda (x) x)
                      (mapplist
                       #'(lambda (key value)
-                          `(',key ,value) )
-                      (cdr option) )))))
-      (t (list `',(car option) `',(cadr option))) )))
+                          `(',key ,value))
+                      (cdr option))))))
+      (t (list `',(car option) `',(cadr option))))))
 
 ;;; find-class
 (let ((class-table (make-hash-table :test #'eq)))
@@ -456,14 +456,14 @@
     (let ((class (gethash symbol class-table nil)))
       (if (and (null class) errorp)
           (error "No class named ~S." symbol)
-          class )))
+          class)))
 
   (defun (setf find-class) (new-value symbol)
-    (setf (gethash symbol class-table) new-value) )
+    (setf (gethash symbol class-table) new-value))
 
   (defun forget-all-classes ()
     (clrhash class-table)
-    (values) )
+    (values))
  ) ;end let class-table
 
 ;;; Ensure class
